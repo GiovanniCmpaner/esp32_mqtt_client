@@ -3,6 +3,7 @@
 #include <PubSubClient.h>
 #include <SPI.h>
 #include <BME280I2C.h>
+#include <ESP32Servo.h>
 
 /* --------------Pinos------------- */
 const uint8_t LDR = 36;
@@ -30,6 +31,7 @@ namespace Mqtt
 WiFiClient espClient;
 PubSubClient client{ espClient };
 BME280I2C bme{};
+Servo servo{};
 
 /*-------------Variáveis Sensores-----------*/
 float pressao {0.0};
@@ -59,6 +61,9 @@ void setup()
     inicializaPerifericos();
     inicializaMqtt();
     inicializaWifi();
+
+    servo.attach( PINO_PERSIANA );
+    servo.write( 180 );
 }
 //----------------------------------------------------------------------------------------------------
 void loop()
@@ -128,6 +133,17 @@ void processaRecebimento( char* topic, byte* payload, unsigned int length )
         {
             digitalWrite( 13, LOW ); //TODO: Alterar
         }
+
+        /*
+          if( luxAtual > luxAlvo * 1.1 && rotacao > 0){ // Servo movendo sentido anti-horario?
+            rotacao--; // Avan�a sentido anti-horario
+          }
+          else if( luxAtual < luxAlvo * 0.9 && rotacao < 55){ // Servo movendo sentido horario?
+            rotacao++; // Avan�a sentido horario
+          }
+
+          servoPersiana.write(180 - constrain(rotacao,0,55));
+        */
     }
 }
 //----------------------------------------------------------------------------------------------------
