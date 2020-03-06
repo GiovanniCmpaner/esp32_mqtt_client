@@ -103,11 +103,11 @@ void processaEnvio()
             sensorLuminosidade();
 
             char mensagem[128];
-            sprintf( mensagem, "%s;%f", Mqtt::clientId, static_cast<double>( random( 0, 50 ) ) );
+            sprintf( mensagem, "%s;%f", Mqtt::clientId, temperatura );
             client.publish( "temperature", mensagem );
             Serial.printf( "Enviando [%s = %s]\r\n", "temperature", mensagem );
 
-            sprintf( mensagem, "%s;%f", Mqtt::clientId, static_cast<double>( random( -50, 50 ) ) );
+            sprintf( mensagem, "%s;%f", Mqtt::clientId, luminosidade );
             client.publish( "luminosity", mensagem );
             Serial.printf( "Enviando [%s = %s]\r\n", "luminosity", mensagem );
         }
