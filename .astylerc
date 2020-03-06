@@ -1,0 +1,12 @@
+style=allman
+indent=spaces=4
+convert-tabs
+indent-namespaces
+indent-classes
+indent-switches
+add-braces
+align-pointer=type
+align-reference=type
+pad-paren-in
+pad-comma
+pad-oper
