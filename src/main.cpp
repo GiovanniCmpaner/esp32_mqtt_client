@@ -23,10 +23,9 @@ namespace Mqtt
     const uint16_t port {1883};
     const char* user {"sensor"};
     const char* password {"sensor"};
+    const char* clientId{"esp32_teste"};
 
 }
-
-const char* sensorId{"esp32_teste"};
 
 WiFiClient espClient;
 PubSubClient client{ espClient };
@@ -53,6 +52,7 @@ void sensorBME280();
 //----------------------------------------------------------------------------------------------------
 void setup()
 {
+    delay( 1000 );
     Serial.begin( 115200 );
     Serial.setDebugOutput( true );
 
@@ -77,7 +77,7 @@ void processaMqtt()
         {
             timerReconexao = agora;
 
-            if ( client.connect( "esp32_id", Mqtt::user, Mqtt::password ) )
+            if ( client.connect( Mqtt::clientId, Mqtt::user, Mqtt::password ) )
             {
                 client.subscribe( "action" );
                 timerReconexao = 0;
@@ -103,16 +103,21 @@ void processaEnvio()
             sensorLuminosidade();
 
             char mensagem[128];
-            sprintf( mensagem, "%s;%f", sensorId, temperatura );
+            sprintf( mensagem, "%s;%f", Mqtt::clientId, static_cast<double>( random( 0, 50 ) ) );
             client.publish( "temperature", mensagem );
-            sprintf( mensagem, "%s;%f", sensorId, luminosidade );
+            Serial.printf( "Enviando [%s = %s]\r\n", "temperature", mensagem );
+
+            sprintf( mensagem, "%s;%f", Mqtt::clientId, static_cast<double>( random( -50, 50 ) ) );
             client.publish( "luminosity", mensagem );
+            Serial.printf( "Enviando [%s = %s]\r\n", "luminosity", mensagem );
         }
     }
 }
 //----------------------------------------------------------------------------------------------------
 void processaRecebimento( char* topic, byte* payload, unsigned int length )
 {
+    Serial.printf( "Recebendo [%s = %.*s]\r\n", topic, length, reinterpret_cast<const char*>( payload ) );
+
     if( strcmp( topic, "action" ) == 0 )
     {
         if( strcmp( reinterpret_cast<const char*>( payload ), "activate" ) == 0 )
