@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <SPI.h>
+#include <Wire.h>
 #include <BME280I2C.h>
 #include <ESP32Servo.h>
 
@@ -9,7 +10,7 @@
 namespace Pins
 {
     const uint8_t LDR{36};
-    const uint8_t SERVO{36};
+    const uint8_t SERVO{23};
 }
 /* --------------Variáveis ESP-Client------------- */
 namespace Wifi
@@ -52,7 +53,7 @@ void processaRecebimento( char* topic, byte* payload, unsigned int length );
 
 void sensorLuminosidade();
 void sensorBME280();
-void moveServo( bool abre );
+void moveServo( bool acao );
 
 //----------------------------------------------------------------------------------------------------
 void setup()
@@ -64,9 +65,6 @@ void setup()
     inicializaPerifericos();
     inicializaMqtt();
     inicializaWifi();
-
-    servo.attach( Pins::SERVO );
-    servo.write( 180 );
 }
 //----------------------------------------------------------------------------------------------------
 void loop()
@@ -112,36 +110,36 @@ void processaEnvio()
 
             char mensagem[128];
             sprintf( mensagem, "%s;%f", Mqtt::clientId, temperatura );
-            client.publish( "temperature", mensagem );
-            Serial.printf( "Enviando [%s = %s]\r\n", "temperature", mensagem );
+            client.publish( "temperature", mensagem, true );
+            Serial.printf( "Enviado [%s = %s]\r\n", "temperature", mensagem );
 
             sprintf( mensagem, "%s;%f", Mqtt::clientId, luminosidade );
-            client.publish( "luminosity", mensagem );
-            Serial.printf( "Enviando [%s = %s]\r\n", "luminosity", mensagem );
+            client.publish( "luminosity", mensagem, true );
+            Serial.printf( "Enviado [%s = %s]\r\n", "luminosity", mensagem );
         }
     }
 }
 //----------------------------------------------------------------------------------------------------
 void processaRecebimento( char* topic, byte* payload, unsigned int length )
 {
-    Serial.printf( "Recebendo [%s = %.*s]\r\n", topic, length, reinterpret_cast<const char*>( payload ) );
+    Serial.printf( "Recebido [%s = %.*s]\r\n", topic, length, reinterpret_cast<const char*>( payload ) );
 
     if( strcmp( topic, "action" ) == 0 )
     {
-        if( strcmp( reinterpret_cast<const char*>( payload ), "activate" ) == 0 )
+        if( length == 8 and strncmp( reinterpret_cast<const char*>( payload ), "activate", length ) == 0 )
         {
             moveServo( true );
         }
-        else if( strcmp( reinterpret_cast<const char*>( payload ), "inactivate" ) == 0 )
+        else if( length == 10 and strncmp( reinterpret_cast<const char*>( payload ), "inactivate", length ) == 0 )
         {
             moveServo( false );
         }
     }
 }
 //----------------------------------------------------------------------------------------------------
-void moveServo( bool abre )
+void moveServo( bool acao )
 {
-    const auto rotacao{abre ? 55 : 0};
+    const auto rotacao{acao ? 0 : 55};
     servo.write( 180 - constrain( rotacao, 0, 55 ) );
 }
 //----------------------------------------------------------------------------------------------------
@@ -179,7 +177,13 @@ void inicializaMqtt()
 //----------------------------------------------------------------------------------------------------
 void inicializaPerifericos()
 {
-    pinMode( LDR, INPUT );
+    pinMode( Pins::LDR, INPUT );
+
+    Wire.begin();
     bme.begin();
+
+    pinMode(Pins::SERVO, OUTPUT);
+    servo.attach( Pins::SERVO );
+    servo.write( 180 );
 }
 //----------------------------------------------------------------------------------------------------
