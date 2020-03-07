@@ -6,21 +6,23 @@
 #include <ESP32Servo.h>
 
 /* --------------Pinos------------- */
-const uint8_t LDR = 36;
-
+namespace Pins
+{
+    const uint8_t LDR{36};
+    const uint8_t SERVO{36};
+}
 /* --------------Variáveis ESP-Client------------- */
-
 namespace Wifi
 {
-    const char* ssid{ "WORKGROUP" };
-    const char* password{ "49WNN7F3CD@22" };
+    const char* ssid{ "WIFI_TESTE_GIO" };
+    const char* password{ "abcd@1234" };
     const uint8_t ip[4] {192, 168, 1, 210};
-    const uint8_t geteway[4] {192, 168, 1, 1};
+    const uint8_t geteway[4] {192, 168, 1, 3};
     const uint8_t netmask[4] {255, 255, 255, 0};
 }
 namespace Mqtt
 {
-    const uint8_t server[4] {192, 168, 1, 205};
+    const uint8_t server[4] {192, 168, 1, 206};
     const uint16_t port {1883};
     const char* user {"sensor"};
     const char* password {"sensor"};
@@ -50,6 +52,7 @@ void processaRecebimento( char* topic, byte* payload, unsigned int length );
 
 void sensorLuminosidade();
 void sensorBME280();
+void moveServo( bool abre );
 
 //----------------------------------------------------------------------------------------------------
 void setup()
@@ -62,7 +65,7 @@ void setup()
     inicializaMqtt();
     inicializaWifi();
 
-    servo.attach( PINO_PERSIANA );
+    servo.attach( Pins::SERVO );
     servo.write( 180 );
 }
 //----------------------------------------------------------------------------------------------------
@@ -97,13 +100,13 @@ void processaMqtt()
 //----------------------------------------------------------------------------------------------------
 void processaEnvio()
 {
-    static uint32_t timerEnvio{0};
-    if( timerEnvio == 0 or millis() - timerEnvio > 10000 )
+    if( client.connected() )
     {
-        timerEnvio = millis();
-
-        if( client.connected() )
+        static uint32_t timerEnvio{0};
+        if( timerEnvio == 0 or millis() - timerEnvio > 10000 )
         {
+            timerEnvio = millis();
+
             sensorBME280();
             sensorLuminosidade();
 
@@ -127,33 +130,28 @@ void processaRecebimento( char* topic, byte* payload, unsigned int length )
     {
         if( strcmp( reinterpret_cast<const char*>( payload ), "activate" ) == 0 )
         {
-            digitalWrite( 13, HIGH ); //TODO: Alterar
+            moveServo( true );
         }
         else if( strcmp( reinterpret_cast<const char*>( payload ), "inactivate" ) == 0 )
         {
-            digitalWrite( 13, LOW ); //TODO: Alterar
+            moveServo( false );
         }
-
-        /*
-          if( luxAtual > luxAlvo * 1.1 && rotacao > 0){ // Servo movendo sentido anti-horario?
-            rotacao--; // Avan�a sentido anti-horario
-          }
-          else if( luxAtual < luxAlvo * 0.9 && rotacao < 55){ // Servo movendo sentido horario?
-            rotacao++; // Avan�a sentido horario
-          }
-
-          servoPersiana.write(180 - constrain(rotacao,0,55));
-        */
     }
+}
+//----------------------------------------------------------------------------------------------------
+void moveServo( bool abre )
+{
+    const auto rotacao{abre ? 55 : 0};
+    servo.write( 180 - constrain( rotacao, 0, 55 ) );
 }
 //----------------------------------------------------------------------------------------------------
 void sensorLuminosidade()
 {
-    const auto leitura {analogRead( LDR )}; // Leitura Analogica
-    const auto tensao{( leitura / 1023.0 ) * 3.3}; // Calcula a Tensão
+    const auto leitura {analogRead( Pins::LDR )}; // Leitura Analogica
+    const auto tensao{( leitura / 4095.0 ) * 3.3}; // Calcula a Tensão
     const auto resistencia{tensao * 10000.0 / ( 3.3 - tensao )}; // Calcula resistencia
-    const auto luxAtual{pow( 10.0, 6.5 - 1.25 * log10( resistencia ) )}; // Calcula Lux
-    luminosidade = luxAtual;
+    const auto lux{pow( 10.0, 6.5 - 1.25 * log10( resistencia ) )}; // Calcula Lux
+    luminosidade = lux;
 }
 //----------------------------------------------------------------------------------------------------
 void sensorBME280()
