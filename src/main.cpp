@@ -17,7 +17,7 @@ namespace Wifi
     const char* ssid{ "WIFI_TESTE_GIO" };
     const char* password{ "abcd@1234" };
     const uint8_t ip[4] {192, 168, 1, 210};
-    const uint8_t geteway[4] {192, 168, 1, 3};
+    const uint8_t geteway[4] {192, 168, 1, 1};
     const uint8_t netmask[4] {255, 255, 255, 0};
 }
 namespace Mqtt
