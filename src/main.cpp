@@ -61,6 +61,7 @@ void setup()
     delay( 1000 );
     Serial.begin( 115200 );
     Serial.setDebugOutput( true );
+    Serial.printf( "inicio\r\n" );
 
     inicializaPerifericos();
     inicializaMqtt();
@@ -159,6 +160,8 @@ void sensorBME280()
 //----------------------------------------------------------------------------------------------------
 void inicializaWifi()
 {
+    Serial.printf( "inicializa wifi\r\n" );
+
     WiFi.mode( WIFI_MODE_STA );
 
     WiFi.persistent( false );
@@ -171,18 +174,24 @@ void inicializaWifi()
 //----------------------------------------------------------------------------------------------------
 void inicializaMqtt()
 {
+    Serial.printf( "inicializa mqtt\r\n" );
+
     client.setServer( Mqtt::server, Mqtt::port );
     client.setCallback( processaRecebimento );
 }
 //----------------------------------------------------------------------------------------------------
 void inicializaPerifericos()
 {
+    Serial.printf( "inicializa perifericos\r\n" );
+
     pinMode( Pins::LDR, INPUT );
 
     Wire.begin();
-    bme.begin();
+    if(!bme.begin()){
+        Serial.printf( "erro ao inicializar bme\r\n" );
+    }
 
-    pinMode(Pins::SERVO, OUTPUT);
+    pinMode( Pins::SERVO, OUTPUT );
     servo.attach( Pins::SERVO );
     servo.write( 180 );
 }
